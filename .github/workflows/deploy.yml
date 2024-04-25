@@ -13,44 +13,19 @@ on:
       - master
 
 jobs:
-  app-setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  deploy-netlify:
+    uses: ./.github/workflows/deploy-netlify.yml
+    secrets:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_CODEARTIFACT_REPOSITORY: ${{ secrets.AWS_CODEARTIFACT_REPOSITORY }}
+      AWS_CODEARTIFACT_DOMAIN: ${{ secrets.AWS_CODEARTIFACT_DOMAIN }}
+      AWS_CODEARTIFACT_DOMAIN_OWNER: ${{ secrets.AWS_CODEARTIFACT_DOMAIN_OWNER }}
 
-      - name: Setup project dependencies
-        uses: ./.github/actions/setup-project
-        with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-codeartifact-repository: ${{ secrets.AWS_CODEARTIFACT_REPOSITORY }}
-          aws-codeartifact-domain: ${{ secrets.AWS_CODEARTIFACT_DOMAIN }}
-          aws-codeartifact-domain-owner: ${{ secrets.AWS_CODEARTIFACT_DOMAIN_OWNER }}
-
-      - name: Lint code
-        run: npm run lint
-
-      - name: Execute unit tests
-        run: npm run test
-
-      - name: Build
-        run: npm run build
-
-      - name: Deploy app to Vercel production env
-        uses: ./.github/actions/deploy-vercel
-        with:
-          vercel-token: ${{ secrets.VERCEL_AUTH_TOKEN }}
-          mode: 'production'
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: './dist'
-          production-branch: master
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deployed from GitHub Actions'
+  deploy-vercel:
+    needs: deploy-netlify
+    uses: ./.github/workflows/deploy-vercel.yml
+    secrets: inherit
