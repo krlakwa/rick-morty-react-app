@@ -49,15 +49,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy app to Vercel production env
-        uses: ./.github/actions/deploy-vercel
-        with:
-          vercel-token: ${{ secrets.VERCEL_AUTH_TOKEN }}
-          mode: 'production'
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
         with:
