@@ -1,0 +1,46 @@
+name: Setup
+description: Setup node project
+
+inputs:
+  aws-region:
+    description: 'AWS region'
+    required: true
+  aws-access-key-id:
+    description: 'AWS access key ID'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS secret access key'
+    required: true
+  aws-codeartifact-repository:
+    description: 'AWS CodeArtifact repository'
+    required: true
+  aws-codeartifact-domain:
+    description: 'AWS CodeArtifact domain'
+    required: true
+  aws-codeartifact-domain-owner:
+    description: 'AWS CodeArtifact domain owner'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+
+    - name: Login to AWS CodeArtifact
+      run: |
+        aws codeartifact login --tool npm --repository ${{ inputs.aws-codeartifact-repository }} --domain ${{ inputs.aws-codeartifact-domain }} --domain-owner ${{ inputs.aws-codeartifact-domain-owner }}
+      shell: bash
+
+    - name: Configure node
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
