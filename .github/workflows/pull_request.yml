@@ -1,9 +1,6 @@
 # <project_root>/.github/workflows/deploy.yml
 
 name: Deploy
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 on:
   pull_request:
@@ -14,27 +11,18 @@ jobs:
   app-setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS CLI
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup project dependencies
+        uses: ./.github/actions/setup-project
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Login to AWS CodeArtifact
-        run: |
-          aws codeartifact login --tool npm --repository ${{ secrets.AWS_CODEARTIFACT_REPOSITORY }} --domain ${{ secrets.AWS_CODEARTIFACT_DOMAIN }} --domain-owner ${{ secrets.AWS_CODEARTIFACT_DOMAIN_OWNER }}
-
-      - name: Configure node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Install dependencies
-        run: npm ci
+          aws-codeartifact-repository: ${{ secrets.AWS_CODEARTIFACT_REPOSITORY }}
+          aws-codeartifact-domain: ${{ secrets.AWS_CODEARTIFACT_DOMAIN }}
+          aws-codeartifact-domain-owner: ${{ secrets.AWS_CODEARTIFACT_DOMAIN_OWNER }}
 
       - name: Lint code
         run: npm run lint
@@ -45,32 +33,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel@canary
-
-      - name: Pull Vercel environment information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_AUTH_TOKEN }}
-
-      - name: Build for Vercel
-        run: vercel build --token=${{ secrets.VERCEL_AUTH_TOKEN }}
-
-      - name: Deploy to Vercel
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_AUTH_TOKEN }}
-
-      - name: Deploy to Vercel
-        run: |
-          DEPLOY_OUTPUT="$(vercel deploy --token=${{ secrets.VERCEL_AUTH_TOKEN }})"
-          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep http | tail -n 1)
-          echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_ENV
-
-      - name: Comment on PR with deployment URL
-        uses: actions/github-script@v7
+      - name: Deploy app to Vervell preview env
+        uses: ./.github/actions/deploy-vercel
         with:
-          script: |
-            const {DEPLOY_URL} = process.env;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🔍 Preview URL: ${DEPLOY_URL}`
-            });
+          vercel-token: ${{ secrets.VERCEL_AUTH_TOKEN }}
+          mode: 'preview'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
