@@ -37,6 +37,7 @@ runs:
       shell: bash
 
     - name: Comment on PR with deployment URL
+      if: ${{ inputs.mode == 'preview' }}
       uses: actions/github-script@v7
       with:
         script: |
