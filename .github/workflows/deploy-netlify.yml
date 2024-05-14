@@ -23,7 +23,9 @@ on:
         required: true
 
 jobs:
-  deploy:
+  deploy-netlify:
+    environment:
+      name: "Development"
     runs-on: ubuntu-latest
 
     steps:

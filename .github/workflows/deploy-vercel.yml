@@ -6,7 +6,9 @@ on:
   workflow_call:
 
 jobs:
-  deploy:
+  deploy-vercel:
+    environment:
+      name: "Staging"
     runs-on: ubuntu-latest
 
     steps:
